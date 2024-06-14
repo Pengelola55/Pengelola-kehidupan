@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manajemen Keuangan</title>
+    <!-- Tailwind CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.15/dist/tailwind.min.css" rel="stylesheet">
+    <!-- AOS CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/aos@2.3.4/dist/aos.css" rel="stylesheet">
+    <!-- Typed.js -->
+    <script src="https://cdn.jsdelivr.net/npm/typed.js@2.0.12"></script>
+    <!-- Custom CSS -->
+    <style>
+        /* Custom styles can be added here */
+    </style>
+</head>
+<body class="bg-gray-100">
+    <div class="container mx-auto px-4 py-8">
+        <h1 class="text-3xl font-bold text-center mb-8">Manajemen Keuangan</h1>
+        <div class="max-w-lg mx-auto bg-white p-6 rounded shadow-md">
+            <form id="salaryForm" class="space-y-4" data-aos="fade-up" data-aos-duration="800">
+                <div>
+                    <label for="salary" class="block text-sm font-medium text-gray-700">Gaji Anda (per bulan)</label>
+                    <input type="number" id="salary" name="salary" class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
+                </div>
+                <div>
+                    <label for="familySize" class="block text-sm font-medium text-gray-700">Jumlah Anggota Keluarga</label>
+                    <input type="number" id="familySize" name="familySize" class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
+                </div>
+                <div>
+                    <label for="hasDebt" class="block text-sm font-medium text-gray-700">Apakah Anda Memiliki Hutang?</label>
+                    <select id="hasDebt" name="hasDebt" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                        <option value="false">Tidak</option>
+                        <option value="true">Ya</option>
+                    </select>
+                </div>
+                <div id="debtAmountContainer" style="display: none;">
+                    <label for="debtAmount" class="block text-sm font-medium text-gray-700">Nominal Hutang (IDR)</label>
+                    <input type="number" id="debtAmount" name="debtAmount" class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
+                </div>
+                <div id="monthlyPaymentContainer" style="display: none;">
+                    <label for="monthlyPayment" class="block text-sm font-medium text-gray-700">Pembayaran Hutang per Bulan (IDR)</label>
+                    <input type="number" id="monthlyPayment" name="monthlyPayment" class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
+                </div>
+                <div>
+                    <label for="hasVacation" class="block text-sm font-medium text-gray-700">Apakah Anda Memiliki Rencana Liburan?</label>
+                    <select id="hasVacation" name="hasVacation" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                        <option value="false">Tidak</option>
+                        <option value="true">Ya</option>
+                    </select>
+                </div>
+                <div id="vacationCostContainer" style="display: none;">
+                    <label for="vacationCost" class="block text-sm font-medium text-gray-700">Biaya Liburan (IDR)</label>
+                    <input type="number" id="vacationCost" name="vacationCost" class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
+                </div>
+                <div>
+                    <label for="goal" class="block text-sm font-medium text-gray-700">Apakah Anda Memiliki Tujuan di Bulan Ini?</label>
+                    <input type="text" id="goal" name="goal" class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
+                </div>
+                <div>
+                    <button type="submit" class="w-full bg-indigo-500 text-white py-2 px-4 rounded-md hover:bg-indigo-600 transition duration-200">Hitung Pengeluaran</button>
+                </div>
+            </form>
+            <div id="expensesResult" class="mt-8 space-y-4" style="display: none;">
+                <h2 class="text-lg font-semibold">Pengeluaran Berdasarkan Presentase:</h2>
+                <div id="expensesList"></div>
+                <div id="debtCard" class="mt-4 border border-gray-200 rounded p-4" style="display: none;">
+                    <h3 class="text-md font-semibold mb-2">Pembayaran Hutang per Bulan:</h3>
+                    <div id="debtPayments"></div>
+                </div>
+                <p class="text-gray-500 text-sm mt-2">* Presentase ini bisa disesuaikan sesuai kebutuhan.</p>
+                <p id="additionalAdvice" class="text-gray-500 text-sm mt-2"></p>
+            </div>
+        </div>
+    </div>
+
+    <!-- AOS Library -->
+    <script src="https://cdn.jsdelivr.net/npm/aos@2.3.4/dist/aos.js"></script>
+    <script>
+        // Initialize AOS
+        AOS.init();
+
+        // Function to calculate months to pay off debt and monthly payment
+        function calculateDebtDetails(debtAmount, monthlyPayment, salary) {
+            const monthsLeft = Math.ceil(debtAmount / monthlyPayment);
+            const debtEndAmount = debtAmount % monthlyPayment;
+            return {
+                monthsLeft: monthsLeft,
+                debtEndAmount: debtEndAmount
+            };
+        }
+
+        // Update debt card with payment details
+        function updateDebtCard(debtAmount, monthlyPayment, salary) {
+            const debtDetails = calculateDebtDetails(debtAmount, monthlyPayment, salary);
+            const debtPayments = document.getElementById('debtPayments');
+            debtPayments.innerHTML = `<div><span class="font-medium">Jumlah Hutang:</span> ${new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR' }).format(debtAmount)}</div>
+                                      <div><span class="font-medium">Pembayaran per Bulan:</span> ${new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR' }).format(monthlyPayment)}</div>
+                                      <div><span class="font-medium">Bulan yang tersisa:</span> ${debtDetails.monthsLeft}</div>
+                                      <div><span class="font-medium">Sisa Hutang:</span> ${new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR' }).format(debtDetails.debtEndAmount)}</div>`;
+        }
+
+        // Event listener for debt amount input
+        document.getElementById('debtAmount').addEventListener('input', function() {
+            const debtAmount = parseFloat(this.value) || 0;
+            const monthlyPayment = parseFloat(document.getElementById('monthlyPayment').value) || 0;
+            const salary = parseFloat(document.getElementById('salary').value) || 0;
+            updateDebtCard(debtAmount, monthlyPayment, salary);
+        });
+
+        // Event listener for monthly payment input
+        document.getElementById('monthlyPayment').addEventListener('input', function() {
+            const monthlyPayment = parseFloat(this.value) || 0;
+            const debtAmount = parseFloat(document.getElementById('debtAmount').value) || 0;
+            const salary = parseFloat(document.getElementById('salary').value) || 0;
+            updateDebtCard(debtAmount, monthlyPayment, salary);
+        });
+
+        // Function to handle form submission
+        document.getElementById('salaryForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            // Prevent default form submission
+            e.preventDefault();
+
+            // Get form inputs
+            const salary = parseFloat(document.getElementById('salary').value) || 0;
+            const familySize = parseInt(document.getElementById('familySize').value) || 1;
+            const hasDebt = document.getElementById('hasDebt').value === 'true';
+            const debtAmount = hasDebt ? parseFloat(document.getElementById('debtAmount').value) || 0 : 0;
+            const monthlyPayment = hasDebt ? parseFloat(document.getElementById('monthlyPayment').value) || 0 : 0;
+            const hasVacation = document.getElementById('hasVacation').value === 'true';
+            const vacationCost = hasVacation ? parseFloat(document.getElementById('vacationCost').value) || 0 : 0;
+            const goal = document.getElementById('goal').value.trim();
+
+            // Calculate total expenses based on salary and other inputs
+            const totalPercentage = 1; // Total percentage allocated (food, other needs, savings, debt)
+
+            const expensesResult = document.getElementById('expensesResult');
+            const expensesList = document.getElementById('expensesList');
+            expensesList.innerHTML = '';
+
+            // Define initial expense percentages
+            let expenses = {
+                'Makanan': 0.3, // 30% for food
+                'Kebutuhan Lain': 0.2, // 20% for other needs
+                'Tabungan': 0.5 // 50% for savings
+            };
+
+            // Adjust expenses based on family size
+            expenses['Makanan'] += familySize * 0.05; // Additional 5% per family member
+
+            // Adjust expenses if there is debt
+            if (hasDebt) {
+                // Calculate percentage based on debt
+                const debtPercentage = debtAmount / salary;
+                expenses['Hutang'] = debtPercentage > 0.2 ? 0.2 : debtPercentage; // Maximum 20% of salary for debt
+
+                // Update debt card with payment details
+                updateDebtCard(debtAmount, monthlyPayment, salary);
+                document.getElementById('debtCard').style.display = 'block';
+            } else {
+                // Hide debt card if no debt
+                document.getElementById('debtCard').style.display = 'none';
+            }
+
+            // Adjust expenses based on monthly goal
+            if (goal !== '') {
+                expenses['Kebutuhan Lain'] += 0.15; // Additional 15% if there is a monthly goal
+            }
+
+            // Adjust expenses based on vacation cost
+            if (hasVacation && vacationCost > 0) {
+                expenses['Kebutuhan Lain'] += vacationCost / salary; // Additional percentage based on vacation cost
+            }
+
+            // Display calculated expenses directly
+            expensesList.innerHTML = '';
+            for (const expense in expenses) {
+                const amount = salary * expenses[expense];
+                const formattedAmount = new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR' }).format(amount);
+                const listItem = document.createElement('div');
+                listItem.innerHTML = `<span class="font-medium">${expense}:</span> ${formattedAmount}`;
+                expensesList.appendChild(listItem);
+            }
+
+            // Display additional advice based on expenses
+            let additionalAdvice = '';
+            const totalExpenses = Object.values(expenses).reduce((total, val) => total + val, 0) * salary;
+            if (totalExpenses > salary) {
+                additionalAdvice = 'Anda melebihi anggaran gaji bulanan Anda. Pertimbangkan untuk mengurangi pengeluaran atau menambah sumber pendapatan.';
+            } else {
+                additionalAdvice = 'Anda telah mengelola pengeluaran dengan baik sesuai presentase yang ditetapkan. Pastikan untuk mengalokasikan dana sesuai kebutuhan dan tabungan.';
+            }
+            document.getElementById('additionalAdvice').textContent = additionalAdvice;
+
+            // Show expenses result
+            expensesResult.style.display = 'block';
+
+            // Smooth scroll to expenses result
+            expensesResult.scrollIntoView({ behavior: 'smooth' });
+        });
+
+        // Toggle debt amount input visibility based on selection
+        document.getElementById('hasDebt').addEventListener('change', function() {
+            const debtAmountContainer = document.getElementById('debtAmountContainer');
+            const monthlyPaymentContainer = document.getElementById('monthlyPaymentContainer');
+            const hasDebt = this.value === 'true';
+            debtAmountContainer.style.display = hasDebt ? 'block' : 'none';
+            monthlyPaymentContainer.style.display = hasDebt ? 'block' : 'none';
+
+            // Update debt card visibility
+            if (!hasDebt) {
+                document.getElementById('debtCard').style.display = 'none';
+            }
+        });
+
+        // Toggle vacation cost input visibility based on selection
+        document.getElementById('hasVacation').addEventListener('change', function() {
+            const vacationCostContainer = document.getElementById('vacationCostContainer');
+            const hasVacation = this.value === 'true';
+            vacationCostContainer.style.display = hasVacation ? 'block' : 'none';
+        });
+    </script>
+</body>
+</html>
