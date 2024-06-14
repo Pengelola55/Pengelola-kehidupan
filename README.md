@@ -1,1 +1,1 @@
-# 
+# pengelola kehidupan
