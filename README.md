@@ -64,7 +64,7 @@
             var enteredCaptcha = document.getElementById('entered-captcha').value.toUpperCase();
 
             if (generatedCaptcha === enteredCaptcha) {
-                window.location.href = 'T2.html'; // Redirect to a different page if captcha is correct
+                window.location.href = 'Pengelola.html'; // Redirect to a different page if captcha is correct
             } else {
                 generateCaptcha(); // Generate new captcha
                 document.getElementById('status').classList.remove('text-green-500');
@@ -93,4 +93,5 @@
         window.onload = generateCaptcha;
     </script>
 </body>
+</html>
 </html>
